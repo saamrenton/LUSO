@@ -1,4 +1,4 @@
-This is LUSO (Land Use Sequence Optimiser).
+This is LUSO (Land Use Sequence Optimiser)
 
 LUSO (with later versions also known as LUSOvar) is a model and analysis framework created by Michael Renton and Roger Lawes.
 It includes computer code, parameter files, documentation etc.  
