@@ -1,0 +1,22 @@
+----------------------------------------------
+DESCRIPTION OF py FILES
+
+lusofuncs - underlying required model functions
+
+readers - csv readers for reading in model parameters
+
+tacticalfunc and tacticalfunc@D - functions for analysing tactical desicions and how they change with varying parameter values
+
+luso - basic procedure for reading in parameters, optimising a lus, printing and exporting results 
+
+multiluso - procedure for finding and outputting the best few lus
+
+comparelus - routine for comparing the profitability of a number of lus as a parameter changes
+
+sensitivity - procedure for conducting sensitivity analysis on factorial combinations of parameter values
+(sensitivity_roger and sensitivity_roger2 are examples)
+
+
+
+
+

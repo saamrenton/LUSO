@@ -1,0 +1,44 @@
+You need to install python, and also it's numerical python (numpy) and plotting (matplotlib) libraries.
+
+The easiest way for most people to do this is to install the enthought python edition, which includes all the required libraries. It is free if you are affiliated with an academic institution, or for a trial version. 
+You can download it from http://www.enthought.com/products/getepd.php
+
+There is also a new free version, that is totally free for everyone, which is more than enough.
+So if you dont want the full package, folow this link...
+http://www.enthought.com/products/epd_free.php
+
+Otherwise you can install the main python and the libraries seperately, as described below.
+
+------------------------------------------------
+INSTALL PYTHON AND REQUIRED LIBRARIES
+---------------------
+
+
+you need to get and install python 2.6
+you can find the right download for your computer at http://www.python.org/download/releases/2.6.6/
+or the windows x86 installer direct at http://www.python.org/ftp/python/2.6.6/python-2.6.6.msi
+run the msi windows installer as usual, or as appropriate for your machine
+
+next you need numpy 1.3 for python 2.6
+find the right version for your machine at 
+http://sourceforge.net/projects/numpy/files/NumPy/1.3.0/ 
+or 
+or the windows x86 installer direct at 
+http://sourceforge.net/projects/numpy/files/NumPy/1.3.0/numpy-1.3.0-win32-superpack-python2.6.exe/download
+run the exe windows installer as usual, or as appropriate for your machine
+
+finally you then need matplotlib 0.99 for python 2.6
+find the right version for your machine at 
+http://sourceforge.net/projects/matplotlib/files/matplotlib/matplotlib-0.99/
+or 
+or the windows x86 installer direct at 
+http://sourceforge.net/projects/matplotlib/files/matplotlib/matplotlib-0.99/matplotlib-0.99.0.win32-py2.6.exe/download
+run the exe windows installer as usual, or as appropriate for your machine
+
+
+
+# note - mac users may have problems with their pre-installed version of python - http://matplotlib.sourceforge.net/faq/installing_faq.html#which-python-for-osx
+for other options...
+
+
+

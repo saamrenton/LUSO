@@ -1,0 +1,54 @@
+TO DO
+
+automatically produce histogram-distribution figure after multi-runs 
+
+extra column in outputs for undiscounted profit (for clarity)
+
+an extra input file for users to specify disallowed combinations of landuses... eg. canola-canolaX
+
+give overall profit as an average per year? (accounting for discounting?) ie annualised NPV
+
+'water effects' over multiple years - and varying by affected crop as well as affecting crop - specified in a seperate parameter file...
+this will be flexible enough to allow any kind of additional effect over time as far as I can see (including soil health, factor X, or fairy dust)
+Like this:
+fallow,wheat, 1, 1.2 
+fallow,canola, 1, 1.3 
+fallow,canola, 2, 1.1 
+
+
+
+price variability (independent of season or linked to season)
+
+variable costs as a function of yield - do this as a linear function? ie fixed variable cost plus extra variable cost per tonne of yield? 
+
+
+TO DO MAYBE
+
+broad-leaf weed as well as grass weed? this wouldnt be a big hassle to do, but will complicate model parametrisation?? 
+although i can again think of a way to put it in a seperate file and allow simple defaults to minimise complexity...
+
+
+POSSIBLE BUT NOT NOW
+
+N effects over multiple years - wait for improved mechanistic N module (or include as water effect)
+
+add a 'soil health' module?? probably not
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+change final weed seed penalty to be a maximum weed seed number instead...
+
+make a max number for each land use option...

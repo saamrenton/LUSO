@@ -1,0 +1,11 @@
+name,yield,price,cost,costCont,Nreq,IEprevcrop,DEcrop,NboostperTonne,weedsurvival,compindex,sowdensity,weedseedreturn,label,hide
+hi wheat,3,350,250,250,160,0.5,0.1,0,0.05,0.091,150,1,HW,n
+wheat,2.2,350,200,200,120,0.5,0.1,0,0.05,0.091,100,1,W,n
+lupins harvested,1.5,250,200,200,0,0.01,0,50,0.03,0.08,40,1,LH,n
+sprayed pasture,3,0,80,80,0,0.01,0,25,0.03,0.08,50,0.1,SP,n
+canola,1.3,550,250,250,120,0.01,0,0,0.03,0.08,100,1,C,n
+lupins manured,1.5,0,150,150,0,0.01,0,70,0.03,0.08,40,0.1,LM,n
+extra hi wheat,3,350,350,350,160,0.5,0.1,0,0.03,0.091,180,1,HW!,y
+ppasture,3,90,100,0,0,0.01,0,25,0.03,0.08,50,0.1,PP,y
+,,,,,,,,,,,,,,
+,yield of this crop,price received for this crop,variable cost to grow this crop ,variable cost to grow this crop in a second and subsequent year,N required per tonne,"crop effect on subsequent disease incidence: 1 is max, 0 is no disease",average effect of disease on this crop ,N fixed per tonne,proportion of weeds that survive to set seed,competition index of crop,crop sowing density,proportion of weed seeds returned to seedbank,label for plots,if 'y' then not included in analysis for now
