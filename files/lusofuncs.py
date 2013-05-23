@@ -87,7 +87,8 @@ class State:
         actualCost=lu['cost']
         if self.previousLU==lu['name']:
             actualCost=lu['costCont']
-        profit=self.discount*(income-actualCost-Ncost-parameters['fixedcosts'])
+        undiscountedprofit=income-actualCost-Ncost-parameters['fixedcosts']
+        profit=self.discount*undiscountedprofit
         self.discount=self.discount*(1-parameters['discountrate'])
         if lu['name']=='canola':
             self.blackleg=1
@@ -109,6 +110,7 @@ class State:
         #print self.previousLU
         return dict([('name',lu['name']),
                      ('profit',profit),
+                     ('undiscountedprofit',undiscountedprofit),
                      ('yield',yieldd),
                      ('income',income),
                      ('cost',actualCost+parameters['fixedcosts']),
@@ -168,7 +170,7 @@ def profit(lus,parameters,lulist,getDetails=False,parameters2=None,lulist2=None,
         if stochMultsUsed!=None:
             out['iden'] = stochMultsUsed[yr]['label']
         out['year'] = yr
-        if getDetails:
+        if getDetails or getDetails=="both":
             details.append(out)
         parameters=parameters2
         lulist=lulist2
@@ -219,7 +221,7 @@ def addValsToDetails(details,labels=['null'],vals=[999]):
 
 ######### write details (from function above) to csv file
 def detailsToCSV(details,filename):
-    namesToWrite=['iden','year','name','profit','cumprofit','income','yield','cost','Ncost','disease','diseaseImpact','weedpenalty','newN','newseedbank']
+    namesToWrite=['iden','year','name','undiscountedprofit','profit','cumprofit','income','yield','cost','Ncost','disease','diseaseImpact','weedpenalty','newN','newseedbank']
     headerdict=dict([(e,e) for e in namesToWrite])
     if filename!=None:
         f=open("outputs/"+filename,'w')

@@ -3,7 +3,7 @@
 ## exporting results to a file called 'multiple runs variable season results.csv'
 
 cropRotation=[1,1,3,1,1,3,1,1,3,1]  ## this is the crop sequence that will be evaluated
-nreps = 100  ## the number of season sequences to simulate
+nreps = 500  ## the number of season sequences to simulate
 seasonsWithReplacement=False
 
 
@@ -54,6 +54,7 @@ alldetails=[]
 f=open('outputs/multiple runs variable season profits.csv','w')
 wr = writer(f,lineterminator='\n')
 wr.writerow(['profit'])
+prrec=[]
 print '#############################################################################'
 for rep in range(nreps):
     print '#############################################################################'
@@ -73,10 +74,16 @@ for rep in range(nreps):
     [details,p]=profit(cropRotation,parameters,lulist,getDetails="both",stochMultsUsed=stochMultsUsed,pureRandomEffects=True)
     alldetails.extend(details)
     wr.writerow([p])
+    prrec.append(p)
 
 
 f.close()
 detailsToCSV(alldetails,'multiple runs variable season results.csv')
+hist(prrec)
+xlabel('profit ($)')
+title('histogram of profits')
+ylabel('frequency')
+savefig("outputs/"+'multiple runs variable season profit histogram.png')
 print '#############################################################################'
 print('DONE: profits penalised for final seedbank are in file called multiple runs variable season profits.csv')
 print('more information in output file called multiple runs variable season results.csv')

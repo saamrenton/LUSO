@@ -24,8 +24,8 @@ from csv import *
 from lusofuncs import *
 
 
-lulist=readinLUlist('GS_LUSdetails_used.csv')
-parameters=readinparams('GS_parameters_used.csv')
+lulist=readinLUlist('_LUSdetails_used.csv')
+parameters=readinparams('_parameters_used.csv')
 
 nlus=len(lulist)
 print [lu['name'] for lu in lulist]
