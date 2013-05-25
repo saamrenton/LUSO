@@ -33,6 +33,8 @@ stochMults
 lulist=readinLUlist('_LUSdetails_used.csv')
 parameters=readinparams('_parameters_used.csv')
 stochMultsUsed=[stochMults[s-1] for s in seasonSeq]
+optionalparams=readoptionalparams(lulist)
+optionalparams['pricevarlist']=[]   ## set this back to empty, because makes no sense to have price variability for this function...
 
 updateParameter(len(seasonSeq),parameters,lulist,'nyears')
 
@@ -50,11 +52,9 @@ for lu in lulist:
 #sb0=500
 #parameters.update([('seedbank0',sb0)]
 
-#b=testall(int(parameters['nyears']),int(len(lulist)),parameters,lulist)
-#b=randsearch(int(parameters['nyears']),1,parameters,lulist)
-b=GA(int(parameters['nyears']),parameters,lulist,stochMultsUsed=stochMultsUsed)
+b=GA(int(parameters['nyears']),parameters,lulist,optionalparams=optionalparams,stochMultsUsed=stochMultsUsed)
 print '#############################################################################'
-details=profit(b,parameters,lulist,getDetails=True,stochMultsUsed=stochMultsUsed)
+details=profit(b,parameters,lulist,getDetails=True,optionalparams=optionalparams,stochMultsUsed=stochMultsUsed)
 print(details)
 plotDetails(details,stufftoplot=['cost','profit','disease','newseedbank','weedpenalty','newN'],lus=b,lulist=lulist)
 savefig('outputs/luso_output_details.png')
@@ -67,7 +67,7 @@ print "finished - the best land use sequence found was"
 print [lulist[bx]['name'] for bx in b]
 
 print '#############################################################################'
-print('overall profit:'),profit(b,parameters,lulist,getDetails=False,stochMultsUsed=stochMultsUsed)
+print('overall profit:'),profit(b,parameters,lulist,getDetails=False,optionalparams=optionalparams,stochMultsUsed=stochMultsUsed)
 print('this includes the penalty for final weed seedbank')
 
 print '#############################################################################'

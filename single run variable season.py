@@ -33,6 +33,9 @@ stochMults=readinstochMults('_stochasticParameters_used.csv')
 stochMults
 lulist=readinLUlist('_LUSdetails_used.csv')
 parameters=readinparams('_parameters_used.csv')
+optionalparams=readoptionalparams(lulist)
+optionalparams['pricevarlist']=[]   ## set this back to empty, because makes no sense to have price variability for this function...
+
 
 print '#############################################################################'
 print('these land uses available:')
@@ -52,12 +55,12 @@ print [stochMults[e-1]['label'] for e in seasonSeq]
 
 stochMultsUsed=[stochMults[s-1] for s in seasonSeq]
 print '#############################################################################'
-print('overall profit:'),profit(cropRotation,parameters,lulist,getDetails=False,stochMultsUsed=stochMultsUsed,pureRandomEffects=pureRandomEffects)
+print('overall profit:'),profit(cropRotation,parameters,lulist,getDetails=False,optionalparams=optionalparams,stochMultsUsed=stochMultsUsed,pureRandomEffects=pureRandomEffects)
 print('this includes the penalty for final weed seedbank')
 
 print '#############################################################################'
 print('more information in output files')
-details=profit(cropRotation,parameters,lulist,getDetails=True,stochMultsUsed=stochMultsUsed,pureRandomEffects=pureRandomEffects)
+details=profit(cropRotation,parameters,lulist,getDetails=True,optionalparams=optionalparams,stochMultsUsed=stochMultsUsed,pureRandomEffects=pureRandomEffects)
 #print(details)
 plotDetails(details,stufftoplot=['cost','profit','disease','newseedbank','weedpenalty','newN'],lus=cropRotation,lulist=lulist)
 savefig('outputs/singlerun_varseason_details.png')

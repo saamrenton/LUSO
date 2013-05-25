@@ -1,3 +1,4 @@
+## update 23/5 2013 ## various changes as per requirements of project meeting 2013
 ##  update 26 mar 2013  ## to modify input and output paths
 ##  update 24 feb 2012  ## to include variable season
 
@@ -8,6 +9,7 @@ from math import exp
 from numpy import *
 from pylab import *
 from diseasefuncs import *
+
 
 ######## generalise parameter setting and getting - should convert to a class one day :-)
 def getParameter(parameters,lulist,paramName,luname='general'):
@@ -35,19 +37,18 @@ def logit(p):
 ####state
 class State:
     "State of the system"
-    seedbank=0
-    N=0
-    disease=0
-    blackleg=0
-    discount=1
-    previousLU="XXX"
-    def __init__(self,parameters):
+    def __init__(self,parameters,optionalparams):
         self.seedbank=parameters['seedbank0']
         self.N=parameters['N0']
         self.disease=parameters['DI0']
         self.IEprevcrop=0.5
         self.watermult=1.0
-    def update(self,lu,parameters,stochEffects=None,pureRandomEffects=False):
+        self.optionalparams=optionalparams
+        self.history=[]
+        self.discount=1.0
+        self.previousLU="XXX"
+        self.blackleg=0.
+    def update(self,lu,lui,parameters,stochEffects=None,pureRandomEffects=False):
         noDisease=False
         noN=False
         nweeds=parameters['weedgermination']*self.seedbank
@@ -75,7 +76,15 @@ class State:
         if stochEffects==None: yieldMult=1.0
         else: yieldMult=stochEffects[lu['name']]
         yieldd=yieldd*yieldMult*self.watermult
-        income=yieldd*lu['price']
+        if self.optionalparams!=None:
+            if self.optionalparams['addefflist']!=[]:
+                yieldd=yieldd*getadditionaleffects(lui,self.history,self.optionalparams['addefflist'])
+        extrayield = yieldd - lu['yield']
+        if stochEffects!=None and self.optionalparams!=None and self.optionalparams['pricevarlist']!=[]:
+            actualprice=lu['price']*choice(self.optionalparams['pricevarlist'][lui])
+        else:
+            actualprice=lu['price']
+        income=yieldd*actualprice
         nreq=lu['Nreq']
         if stochEffects!=None:
             nreq=nreq*stochEffects['NReq']
@@ -87,6 +96,8 @@ class State:
         actualCost=lu['cost']
         if self.previousLU==lu['name']:
             actualCost=lu['costCont']
+        extravariablecost = extrayield * lu['extracostperextrayield']
+        actualCost+=extravariablecost
         undiscountedprofit=income-actualCost-Ncost-parameters['fixedcosts']
         profit=self.discount*undiscountedprofit
         self.discount=self.discount*(1-parameters['discountrate'])
@@ -106,12 +117,15 @@ class State:
         self.previousLU=lu['name']
         self.IEprevcrop=lu['IEprevcrop']
         self.watermult=lu['watermult']
+        self.history.append(lui)
         #print lu['name']
         #print self.previousLU
         return dict([('name',lu['name']),
                      ('profit',profit),
                      ('undiscountedprofit',undiscountedprofit),
+                     ('discount',self.discount),
                      ('yield',yieldd),
+                     ('price',actualprice),
                      ('income',income),
                      ('cost',actualCost+parameters['fixedcosts']),
                      ('Ncost',Ncost),
@@ -120,6 +134,15 @@ class State:
                      ('newseedbank',self.seedbank),
                      ('weedpenalty',(1-cropcompfactor/(denom))),
                      ('newN',self.N)])
+
+## get additional effects based on history
+def getadditionaleffects(lui,history,addefflist):
+    for addeff in addefflist:
+        if addeff['yearsbetween']<=len(history):
+            if addeff['laterlu']==lui and addeff['initiallu']==history[-(addeff['yearsbetween'])]:
+                #print "additional effect", addeff
+                return addeff['effectonlaterlu']
+    return 1.0
 
 
 ## convert a lu name to a lu index
@@ -147,13 +170,14 @@ def makeARandomLUS(ny,nlu):
     return lus
 
 ### calculate the profit of a LUS (land use sequence)
-def profit(lus,parameters,lulist,getDetails=False,parameters2=None,lulist2=None,stochMultsUsed=None,pureRandomEffects=False):
+def profit(lus,parameters,lulist,getDetails=False,parameters2=None,lulist2=None,stochMultsUsed=None,pureRandomEffects=False,optionalparams=None,annualise=False):
     if parameters2==None: parameters2=parameters
     if lulist2==None: lulist2=lulist
     p=0
-    st=State(parameters)
+    st=State(parameters,optionalparams)
     details=[]
     yr=0
+    ds=0
     #print 'lus',lus
     for lui in lus:
         #print 'lui',lui
@@ -161,11 +185,13 @@ def profit(lus,parameters,lulist,getDetails=False,parameters2=None,lulist2=None,
         #if yr>0 and lu['name']=='hi wheat' and lu['price']!=350: print "!!!!!!!!!!!!!!!",reset,yr,lu['name'],lu['price'],lui,lulist[lui]['price'],lus,lulist2
         #print lulist
         if stochMultsUsed==None:
-            out=st.update(lu,parameters)
+            out=st.update(lu,lui,parameters)
         else:
-            out=st.update(lu,parameters,stochEffects=stochMultsUsed[yr],pureRandomEffects=pureRandomEffects)
+            out=st.update(lu,lui,parameters,stochEffects=stochMultsUsed[yr],pureRandomEffects=pureRandomEffects)
         p=p+out['profit']
         out['cumprofit'] = p
+        ds=ds+out['discount']
+        out['cumdiscount'] = ds
         #print yr
         if stochMultsUsed!=None:
             out['iden'] = stochMultsUsed[yr]['label']
@@ -178,14 +204,33 @@ def profit(lus,parameters,lulist,getDetails=False,parameters2=None,lulist2=None,
     #if out['newseedbank']>500:
         #p=p-(out['newseedbank']-500)*parameters['costperweedseed']
     p=p-getFinalCostOfSeedbank(out['newseedbank'],parameters)
+    if optionalparams!=None:
+        if optionalparams['disallowedcombos']!=[]:
+            p=p-getpenaltyfordisallowedcombos(lus,optionalparams['disallowedcombos'])
     #if out['newseedbank']>parameters['seedbank0']:
         #p=p-(out['newseedbank']-parameters['seedbank0'])*parameters['costperweedseed']
+    if annualise:
+        p=p/ds
     if getDetails=="both":
         return [details,p]
     if getDetails:
         return details
     else:
         return p
+
+def getpenaltyfordisallowedcombos(lus,disallowedcombos):
+    luslen=len(lus)
+    for combo in disallowedcombos:
+        #print combo
+        combocopy=combo[:]
+        penalty=combocopy.pop(0)
+        combolen=len(combocopy)
+        for startindex in range(luslen-combolen+1):
+            #print lus[startindex:startindex+combolen],combocopy
+            if lus[startindex:startindex+combolen]==combocopy:
+                #print 'penalty'
+                return penalty
+    return 0
 
 def getFinalCostOfSeedbank(seedbank,parameters):
     return seedbank*parameters['costperweedseed']
@@ -221,7 +266,7 @@ def addValsToDetails(details,labels=['null'],vals=[999]):
 
 ######### write details (from function above) to csv file
 def detailsToCSV(details,filename):
-    namesToWrite=['iden','year','name','undiscountedprofit','profit','cumprofit','income','yield','cost','Ncost','disease','diseaseImpact','weedpenalty','newN','newseedbank']
+    namesToWrite=['iden','year','name','undiscountedprofit','profit','cumprofit','discount','cumdiscount','income','yield','price','cost','Ncost','disease','diseaseImpact','weedpenalty','newN','newseedbank']
     headerdict=dict([(e,e) for e in namesToWrite])
     if filename!=None:
         f=open("outputs/"+filename,'w')
@@ -268,7 +313,7 @@ def plotYields(details,lus,lulist,stochMultsUsed):
         text(arange(len(potentialyields))[i]+0.9, potentialyields[i]+0.1, croplabels[i])
 
 ########### given a list of lus, write details for each in turn to a csv file, with a unique ident for each lus
-def multiLUSDetailsToCSV(luslist,filename,parameters,lulist):
+def multiLUSDetailsToCSV(luslist,filename,parameters,lulist,optionalparams=None):
     namesToWrite=['iden','year','name','profit','cumprofit','income','yield','cost','Ncost','disease','weedpenalty','newN','newseedbank']
     headerdict=dict([(e,e) for e in namesToWrite])
     f=open("outputs/"+filename,'w')
@@ -277,7 +322,7 @@ def multiLUSDetailsToCSV(luslist,filename,parameters,lulist):
     i=0
     for lus in luslist:
         i=i+1
-        details=profit(lus,parameters,lulist,getDetails=True)
+        details=profit(lus,parameters,lulist,getDetails=True,optionalparams=optionalparams)
         addToDetails(details,iden=i)
         for d in details:
             thiswriter.writerow(d)
@@ -285,7 +330,7 @@ def multiLUSDetailsToCSV(luslist,filename,parameters,lulist):
 
 
 #### optimise over all possible LUS by testing all
-def testall(ny,nlu,parameters,lulist,stochMultsUsed=None):
+def testall(ny,nlu,parameters,lulist,stochMultsUsed=None,optionalparams=None):
     for i in range(5): print "#######################"
     print "testing all"
     starttime=clock()
@@ -300,7 +345,7 @@ def testall(ny,nlu,parameters,lulist,stochMultsUsed=None):
             thisbit=ii%nlu
             ii=(ii-thisbit)/nlu
             lus.append(thisbit)
-        p=profit(lus,parameters,lulist,stochMultsUsed=stochMultsUsed)
+        p=profit(lus,parameters,lulist,stochMultsUsed=stochMultsUsed,optionalparams=optionalparams)
         #print lus,p
         if bestp<p:
             bestp=p
@@ -314,7 +359,7 @@ def testall(ny,nlu,parameters,lulist,stochMultsUsed=None):
     return bestlus
 
 #### optimise LUS by testing combinations of main landuses, breaks, break frequencies
-def testBreak(ny,nlu,parameters,lulist):
+def testBreak(ny,nlu,parameters,lulist,optionalparams=None):
     for i in range(5): print "#######################"
     print "testing break"
     starttime=clock()
@@ -327,7 +372,7 @@ def testBreak(ny,nlu,parameters,lulist):
                 bys = [i for i in range(ny) if i%freq==0]
                 for i in bys:
                     lus[i]=breaklu
-                p=profit(lus,parameters,lulist)
+                p=profit(lus,parameters,lulist,stochMultsUsed=stochMultsUsed,optionalparams=optionalparams)
                 #print lus,p
                 if bestp<p:
                     bestp=p
@@ -340,7 +385,7 @@ def testBreak(ny,nlu,parameters,lulist):
     return bestlus
 
 #### optimise LUS by testing combinations of main landuses, breaks, break frequencies
-def testBreak2(ny,nlu,parameters,lulist,mainlu):
+def testBreak2(ny,nlu,parameters,lulist,mainlu,optionalparams=None):
     bestlus=[mainlu]*ny
     for i in range(5): print "#######################"
     print "testing break2"
@@ -389,7 +434,7 @@ def testBreak2(ny,nlu,parameters,lulist,mainlu):
     return bestlus
 
 #### fix first year, then optimise over all possible LUS by testing all
-def testalltactical(thisyear,ny,nlu,parameters,lulist,suppress=False,parameters2=None,lulist2=None):
+def testalltactical(thisyear,ny,nlu,parameters,lulist,suppress=False,parameters2=None,lulist2=None,optionalparams=None):
     #print "reset",reset
     starttime=clock()
     bestp=-99999
@@ -403,7 +448,7 @@ def testalltactical(thisyear,ny,nlu,parameters,lulist,suppress=False,parameters2
             thisbit=ii%nlu
             ii=(ii-thisbit)/nlu
             lus.append(thisbit)
-        p=profit(lus,parameters,lulist,parameters2=parameters2,lulist2=lulist2)
+        p=profit(lus,parameters,lulist,parameters2=parameters2,lulist2=lulist2,optionalparams=optionalparams)
         #print lus,p
         if bestp<p:
             bestp=p
@@ -417,7 +462,7 @@ def testalltactical(thisyear,ny,nlu,parameters,lulist,suppress=False,parameters2
     return bestlus
 
 ###### optimise over all possible LUS by testing all, and return best nsols solutions in list
-def testallMultiSols(ny,nlu,nsols,parameters,lulist):
+def testallMultiSols(ny,nlu,nsols,parameters,lulist,optionalparams=None):
     bestluslist=[[-99999,'invalid']]*nsols
     for i in range(nlu**ny):
         lus=[]
@@ -426,7 +471,7 @@ def testallMultiSols(ny,nlu,nsols,parameters,lulist):
             thisbit=ii%nlu
             ii=(ii-thisbit)/nlu
             lus.append(thisbit)
-        p=profit(lus,parameters,lulist)
+        p=profit(lus,parameters,lulist,stochMultsUsed=stochMultsUsed,optionalparams=optionalparams)
         if bestluslist[0][0]<p:
             bestluslist.pop(0)
             bestluslist.append([p,lus])
@@ -438,13 +483,13 @@ def testallMultiSols(ny,nlu,nsols,parameters,lulist):
 
 ####### optimise by making a random search thru the space of possible LUS
 ####### and record the best found
-def randsearch(ny,nsols,parameters,lulist,maxstuck=10000,collectData=False):
+def randsearch(ny,nsols,parameters,lulist,maxstuck=10000,collectData=False,optionalparams=None):
     for i in range(5): print "#######################"
     print "random search"
     starttime=clock()
     nlu=len(lulist)
     lus=[0]*ny
-    bestp=profit(lus,parameters,lulist)
+    bestp=profit(lus,parameters,lulist,stochMultsUsed=stochMultsUsed,optionalparams=optionalparams)
     bestluslist=[[bestp,lus[:]]]*nsols
     stuck=0
     collectedData=[]
@@ -452,7 +497,7 @@ def randsearch(ny,nsols,parameters,lulist,maxstuck=10000,collectData=False):
         stuck=stuck+1
         for i in range(ny):
             lus[i]=randint(0,nlu-1)
-        p=profit(lus,parameters,lulist)
+        p=profit(lus,parameters,lulist,stochMultsUsed=stochMultsUsed,optionalparams=optionalparams)
         if bestluslist[0][0]<p:
             stuck=0
             bestluslist.pop(0)
@@ -470,7 +515,7 @@ def randsearch(ny,nsols,parameters,lulist,maxstuck=10000,collectData=False):
         return bestluslist
 
 ###### optimise by using annealing algorithm (similar to Graeme's I think)
-def anneal(lus,nt,parameters,lulist,starttemp=1000,mintemp=0.1,maxstuck=100000):
+def anneal(lus,nt,parameters,lulist,starttemp=1000,mintemp=0.1,maxstuck=100000,optionalparams=None):
     for i in range(5): print "#######################"
     print "annealing"
     starttime=clock()
@@ -478,7 +523,7 @@ def anneal(lus,nt,parameters,lulist,starttemp=1000,mintemp=0.1,maxstuck=100000):
     ctemp=starttemp
     nlu=len(lulist)
     ny=len(lus)
-    cp=profit(lus,parameters,lulist)
+    cp=profit(lus,parameters,lulist,stochMultsUsed=stochMultsUsed,optionalparams=optionalparams)
     bestp=cp
     bestlus=lus
     print 'starting annealing'
@@ -489,13 +534,13 @@ def anneal(lus,nt,parameters,lulist,starttemp=1000,mintemp=0.1,maxstuck=100000):
         changefrom=lus[ichange]
         changeto=randint(0,nlu-1)
         lus[ichange]=changeto
-        newp=profit(lus,parameters,lulist)
+        newp=profit(lus,parameters,lulist,stochMultsUsed=stochMultsUsed,optionalparams=optionalparams)
         diffavprofit=(newp-cp)/ny
         if exp(diffavprofit/ctemp)<=random():
                 lus[ichange]=changefrom
                 stuck=stuck+1
                 #print 'keep'
-        cp=profit(lus,parameters,lulist)
+        cp=profit(lus,parameters,lulist,stochMultsUsed=stochMultsUsed,optionalparams=optionalparams)
         ctemp=ctemp*tdr
         stuck=stuck+1
         if bestp<newp:
@@ -515,7 +560,7 @@ def anneal(lus,nt,parameters,lulist,starttemp=1000,mintemp=0.1,maxstuck=100000):
 def GA(ny,parameters,lulist,maxgens=100,maxstuck=10,popsize=500,
        survivalrate=0.4,pointmutationrate=0.05,
        insertionmutationrate=0.1,crossType=0,
-       collectData=False,startRand=True,stochMultsUsed=None):
+       collectData=False,startRand=True,stochMultsUsed=None,optionalparams=None):
     for i in range(5): print "#######################"
     print "GA", crossType
     collectedData=[]
@@ -542,7 +587,7 @@ def GA(ny,parameters,lulist,maxgens=100,maxstuck=10,popsize=500,
         #print 'gen',gen
         lusp=[]
         for lus in pop:
-            lusp.append([profit(lus,parameters,lulist,stochMultsUsed=stochMultsUsed),lus])
+            lusp.append([profit(lus,parameters,lulist,stochMultsUsed=stochMultsUsed,optionalparams=optionalparams),lus])
         lusp.sort(reverse=True)
         #print "average profit",sum([lusp[i][0] for i in range(popsize)])/popsize
         if lusp[0][0]>bestp:
@@ -590,7 +635,7 @@ def GA(ny,parameters,lulist,maxgens=100,maxstuck=10,popsize=500,
         return bestlus
 
 def GAtactical(option,ny,parameters,lulist,maxgens=100,
-               maxstuck=10,popsize=500,survivalrate=0.4,pointmutationrate=0.05,insertionmutationrate=0.1):
+               maxstuck=10,popsize=500,survivalrate=0.4,pointmutationrate=0.05,insertionmutationrate=0.1,optionalparams=None):
     starttime=clock()
     nlu=len(lulist)
     bestp=-999
@@ -611,7 +656,7 @@ def GAtactical(option,ny,parameters,lulist,maxgens=100,
         #print 'gen',gen
         lusp=[]
         for lus in pop:
-            lusp.append([profit(lus,parameters,lulist),lus])
+            lusp.append([profit(lus,parameters,lulist,stochMultsUsed=stochMultsUsed,optionalparams=optionalparams),lus])
         lusp.sort(reverse=True)
         #print "average profit",sum([lusp[i][0] for i in range(popsize)])/popsize
         if lusp[0][0]>bestp:

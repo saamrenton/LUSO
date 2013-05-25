@@ -26,6 +26,7 @@ from lusofuncs import *
 
 lulist=readinLUlist('_LUSdetails_used.csv')
 parameters=readinparams('_parameters_used.csv')
+optionalparams=readoptionalparams(lulist,'_disallowed_combinations.csv')
 
 nlus=len(lulist)
 print [lu['name'] for lu in lulist]
@@ -41,11 +42,11 @@ for lu in lulist:
 #sb0=500
 #parameters.update([('seedbank0',sb0)]
 
-#b=testall(int(parameters['nyears']),int(len(lulist)),parameters,lulist)
-#b=randsearch(int(parameters['nyears']),1,parameters,lulist)
-b=GA(int(parameters['nyears']),parameters,lulist)
+#b=testall(int(parameters['nyears']),int(len(lulist)),parameters,lulist,optionalparams=optionalparams)
+#b=randsearch(int(parameters['nyears']),1,parameters,lulist,optionalparams=optionalparams)
+b=GA(int(parameters['nyears']),parameters,lulist,optionalparams=optionalparams)
 print '#############################################################################'
-details=profit(b,parameters,lulist,getDetails=True)
+details=profit(b,parameters,lulist,getDetails=True,optionalparams=optionalparams)
 print(details)
 plotDetails(details,stufftoplot=['cost','profit','disease','newseedbank','weedpenalty','newN'])
 savefig("outputs/"+'luso_output_details.png')
@@ -56,7 +57,8 @@ print "finished - the best land use sequence found was"
 print [lulist[bx]['name'] for bx in b]
 
 print '#############################################################################'
-print('overall profit:'),profit(b,parameters,lulist,getDetails=False)
+print 'overall profit:' ,profit(b,parameters,lulist,getDetails=False,optionalparams=optionalparams,annualise=False)
+print 'annualised profit:' ,profit(b,parameters,lulist,getDetails=False,optionalparams=optionalparams,annualise=True)
 
 print '#############################################################################'
-print('more information in output files')
+print 'more information in output files' 

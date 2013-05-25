@@ -36,6 +36,7 @@ stochMults
 nseasontypes = len(stochMults)
 lulist=readinLUlist('_LUSdetails_used.csv')
 parameters=readinparams('_parameters_used.csv')
+optionalparams=readoptionalparams(lulist)
 
 print '#############################################################################'
 print('these land uses available:')
@@ -71,7 +72,7 @@ for rep in range(nreps):
     print [stochMults[e-1]['label'] for e in seasonSeq]
     stochMultsUsed=[stochMults[s-1] for s in seasonSeq]
     print '#############################################################################'
-    [details,p]=profit(cropRotation,parameters,lulist,getDetails="both",stochMultsUsed=stochMultsUsed,pureRandomEffects=True)
+    [details,p]=profit(cropRotation,parameters,lulist,getDetails="both",optionalparams=optionalparams,stochMultsUsed=stochMultsUsed,pureRandomEffects=True)
     alldetails.extend(details)
     wr.writerow([p])
     prrec.append(p)
@@ -84,6 +85,8 @@ xlabel('profit ($)')
 title('histogram of profits')
 ylabel('frequency')
 savefig("outputs/"+'multiple runs variable season profit histogram.png')
+print '#############################################################################'
+print 'mean and sd of profit',mean(prrec),std(prrec)
 print '#############################################################################'
 print('DONE: profits penalised for final seedbank are in file called multiple runs variable season profits.csv')
 print('more information in output file called multiple runs variable season results.csv')

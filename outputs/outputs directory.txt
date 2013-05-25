@@ -1,1 +1,1 @@
-LUSO output files appear in this directory
+LUSO output files appear in this directory - not tracked by git

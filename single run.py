@@ -1,4 +1,4 @@
-cropRotation=[1,2,3,1,2,3,1,2,3,1]
+cropRotation=[1,5,1,5,1,5]
 
 ######## basic procedure for reading in parameters,
 ## evaluating a land use sequence, printing and exporting results
@@ -28,6 +28,7 @@ from lusofuncs import *
 
 lulist=readinLUlist('_LUSdetails_used.csv')
 parameters=readinparams('_parameters_used.csv')
+optionalparams=readoptionalparams(lulist,'_disallowed_combinations.csv')
 
 print '#############################################################################'
 print('these land uses available:')
@@ -38,15 +39,22 @@ for lu in lulist:
     i=i+1
     
 print '#############################################################################'
-print('evaluating:')
+print 'evaluating:'
 print [lulist[b]['name'] for b in cropRotation]
 
 print '#############################################################################'
-print('overall profit:'),profit(cropRotation,parameters,lulist,getDetails=False)
+##[details1,p1] = profit(cropRotation,parameters,lulist,getDetails='both',optionalparams=optionalparams,annualise=False)
+##[details2,p2] = profit(cropRotation,parameters,lulist,getDetails='both',optionalparams=optionalparams,annualise=False)
+##detailsToCSV(details1,'singlerun_details1.csv')
+##detailsToCSV(details2,'singlerun_details2.csv')
+
+print 'overall profit:',profit(cropRotation,parameters,lulist,getDetails=False,optionalparams=optionalparams,annualise=False)
+print 'annualised profit:',profit(cropRotation,parameters,lulist,getDetails=False,optionalparams=optionalparams,annualise=True)
+
 
 print '#############################################################################'
-print('more information in output files')
-details=profit(cropRotation,parameters,lulist,getDetails=True)
+print 'more information in output files' 
+details=profit(cropRotation,parameters,lulist,getDetails=True,optionalparams=optionalparams)
 #print(details)
 plotDetails(details,stufftoplot=['cost','profit','disease','newseedbank','weedpenalty','newN'],lus=cropRotation,lulist=lulist)
 savefig('outputs/singlerun_details.png')

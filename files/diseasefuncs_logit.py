@@ -21,11 +21,11 @@ def logit(p):
 ## the functional forms can be changed here, as long as the function inputs are not changed
 
 def updateDiseaseIncidence(olddisease,IncidenceEffectOfPrevCrop,lu,parameters,stochEffects=None,pureRandomEffects=False):
-    logitDI = parameters['IEprevinc']  * logit(olddisease) + log(IncidenceEffectOfPrevCrop) 
+    logitDI = parameters['IEprevinc']  * logit(olddisease) + logit(IncidenceEffectOfPrevCrop) 
     if pureRandomEffects:
         logitDI = logitDI + gauss(0,1)*parameters['IErandom']
     if stochEffects!=None:
-        logitDI = logitDI + log(stochEffects['IEseason']) 
+        logitDI = logitDI + logit(stochEffects['IEseason']) 
     newdisease=invlogit(logitDI)
     if newdisease<parameters['DImin']: newdisease=parameters['DImin']
     return newdisease
@@ -38,6 +38,6 @@ def calculateDiseaseImpact(disease,lu,parameters,stochEffects=None,pureRandomEff
     if pureRandomEffects:
         logitDD = logitDD + gauss(0,1)*parameters['DErandom']
     if stochEffects!=None:
-        logitDD = logitDD + log(stochEffects['DEseason'])
+        logitDD = logitDD + logit(stochEffects['DEseason'])
     diseaseImpact = invlogit(logitDD)
     return diseaseImpact
